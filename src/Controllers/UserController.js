@@ -1,11 +1,11 @@
 import User from './../Models/User.js';
+import UserService from "./../Services/UserService.js";
 
 async function createuser(request, response){
     try {
-        await User.create(request.body);
-        return response.status(201).json();
+        return UserService.createuser(request.body, response);
     } catch (error) {
-        return response.status(400).json(error);
+        return response.status(400).json("Não foi possível criar uma conta. Tente novamente!");
     }
 }
 
