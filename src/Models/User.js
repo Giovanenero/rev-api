@@ -2,7 +2,11 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-    name: {
+    firstName: {
+        type: String,
+        require: true
+    },
+    lastName: {
         type: String,
         require: true
     },
@@ -14,14 +18,6 @@ const userSchema = new Schema({
         type: String,
         require: true
     },
-    address: {
-        type: String,
-        require: false
-    },
-    birthday: {
-        type: Number,
-        require: true
-    }
 });
 
 export default mongoose.model('User', userSchema);

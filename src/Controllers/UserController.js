@@ -22,9 +22,9 @@ async function login(request, response){
 async function getusers(request, response){
     try {
         const users = await User.find();
-        return response.status(201).json(users);
+        return response.status(200).json(users);
     } catch (error) {
-        return response.status(400).json(error);
+        return response.status(400).json(error.message);
     }
 }
 
