@@ -12,12 +12,16 @@ const userSchema = new Schema({
     },
     email: {
         type: String,
-        require: false,
+        require: true,
     },
     password: {
         type: String,
         require: true
     },
+    verified: {
+        type: Boolean,
+        require: true
+    }
 });
 
 export default mongoose.model('User', userSchema);

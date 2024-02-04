@@ -4,8 +4,11 @@ import connectDatabase from "./Database/db.js";
 import routes from "./routes.js"
 import cors from 'cors';
 
+import env from "dotenv"
+env.config();
+
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT;
 
 app.use(bodyParser.json()); // para application/json
 app.use(bodyParser.urlencoded({ extended: true })); // para application/x-www-form-urlencoded
