@@ -27,10 +27,10 @@ async function createuser(data, response){
         }
 
         // Verifica se o email já existe
-        const verifyUser = await User.find({email: user.email});
-        if(verifyUser.length > 0){
-            return response.status(411).json("Email indiponível.");
-        }
+        //const verifyUser = await User.findOne({email: user.email});
+        //if(verifyUser){
+        //    return response.status(411).json("Email indiponível.");
+        //}
 
         user.password = await encrypt(user.password);
         //Cria o usuário e adiciona ao banco de dados e retorna para o frontend
@@ -71,10 +71,10 @@ async function encrypt(value){
 async function sendEmail(email){
     // https://youtu.be/q2sPzKgBMaA?si=wAyeusLr3IJx_bUC
 
-    let user = await User.find({email: email});
-    user = user[0];
+    let user = await User.findOne({email: email});
     let code = generateCode(6);
     let html = `<article><h2>Olá, ${user.name}!</h2><br/><p>Obrigado por se cadastrar no nosso sistema.</p><br/><p>Seu código de ativação: <h4>${code}</h4></p><br/><p>att,</p><br/><br/><p>Restauração & Vida</p></article>`
+
     const tramsporter = nodemailer.createTransport({
         host: process.env.TRANSPORTER_HOST,
         port: process.env.TRANSPORTER_PORT,
@@ -90,18 +90,17 @@ async function sendEmail(email){
         subject: "Verificação de Email",
         html: html
     }).then(() => {
-        let verification = {
+        const verification = {
             user_id: user._id,
             unique_string: code,
-            created_at: "12-12-2024", //test
-            expires_at: "12-12-2024" //test
+            expires_at: Date.now() + 7200
         }
         UserVerification.create(verification);
         return 200
     }).catch(() => {
         //Deleta o usuário e a verificação da collection
         UserVerification.deleteOne({user_id: user._id});
-        User.deleteOne("_id: user._id");
+        User.deleteOne({_id: user._id});
         return 500
     })
 }
@@ -109,13 +108,15 @@ async function sendEmail(email){
 
 async function login(request, response){
     try {
-        let data = request.body;
-        let user = await User.find({email: data.email});
-        if(user.length > 0){
+        let data = request;
+        data.email = data.email.trim();
+        data.password = data.password.trim();
+        let user = await User.findOne({email: data.email});
+        if(user === null){
             return response.status(400).json("Email ou senha incorreto.");
         }
-        user = user[0];
-        if(!bcrypt.compareSync(encrypt(data.password), user.password)){
+        const passwordMatch = await bcrypt.compare(data.password, user.password);
+        if(!passwordMatch){
             return response.status(400).json("Email ou senha incorreto.");
         }
 
@@ -135,20 +136,24 @@ async function login(request, response){
 
 async function verifyuser(request, response){
     try {
-        let data = request.body;
+        let data = request;
         data.code = data.code.trim();
         data.email = data.email.trim();
         let userVerification = await UserVerification.findOne({unique_string: data.code});
-        if(!userVerification){
+        console.log(userVerification);
+        if(userVerification == null){
             return response.status(400).json("Código inválido.");
-        } 
-        //converter unidade de tempo pra ver se o código ainda é válido;    
-        //se não for válido, o cliente deve solicitar um novo código por email
+        }
+        let user = await User.findOne({email: data.email});
+        // Se o código expirar é enviado um novo código por email.
+        if(userVerification.expires_at > Date.now()){
+            await sendEmail(user.email);
+            return response.status(400).json("O código de ativação expirou. Enviamos um novo código para seu email");
+        }
 
-        let user = await User.findOne({email: user.email});
         user.verified = true;
         await User.updateOne(user);
-        UserVerification.deleteOne(userVerification);
+        UserVerification.deleteOne({_id: userVerification._id});
         return response.status(200).json();
     } catch (error) {
         return response.status(400).json("Não foi possivel executar essa operação.");

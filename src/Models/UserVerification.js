@@ -10,12 +10,8 @@ const userVerificationSchema = new Schema({
         type: String,
         require: true
     },
-    created_at: {
-        type: Date,
-        require: true,
-    },
     expires_at: {
-        type: Date,
+        type: Number,
         require: true
     },
 });
